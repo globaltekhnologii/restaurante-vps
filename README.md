@@ -11,6 +11,10 @@ Sistema integral de gestión para restaurantes con arquitectura multi-tenant (Sa
 
 ## 📋 Tabla de Contenidos
 
+- [Historia del Proyecto](#-historia-del-proyecto)
+- [Cronología de Desarrollo](#-cronología-de-desarrollo)
+- [Errores y Soluciones Documentados](#-errores-y-soluciones-documentados)
+- [Capturas de Pantalla](#-capturas-de-pantalla)
 - [Características Principales](#-características-principales)
 - [Módulos del Sistema](#-módulos-del-sistema)
 - [Requisitos del Sistema](#-requisitos-del-sistema)
@@ -25,6 +29,266 @@ Sistema integral de gestión para restaurantes con arquitectura multi-tenant (Sa
 - [Licencia](#-licencia)
 
 ---
+
+## 📖 Historia del Proyecto
+
+### Origen y Evolución
+
+Este proyecto nació como una solución integral para la gestión de restaurantes, evolucionando desde un sistema básico hasta una plataforma SaaS multi-tenant completa con integración de hardware periférico.
+
+### Línea de Tiempo
+
+```
+2025-12-01  │  v2.0.0 - Sistema básico de restaurante
+            │
+2025-12-15  │  v3.0.0 - Arquitectura multi-tenant implementada
+            │           Sistema de autenticación con roles
+            │           Módulos de admin, ventas, cocina e inventario
+            │
+2025-12-21  │  v3.1.0 - Sistema de Hardware Periférico
+            │           Sistema de Actualizaciones Automáticas
+            │           Integración con IA (Antigravity)
+            │           Documentación completa
+```
+
+---
+
+## 🗓️ Cronología de Desarrollo
+
+### Fase 1: Planificación (2025-12-20)
+
+**Objetivo Inicial:** Implementar un sistema completo de hardware periférico para restaurantes.
+
+**Módulos Planificados:**
+- Impresoras térmicas ESC/POS
+- Balanzas digitales
+- Termómetros de cocina
+- Sistema de actualizaciones automáticas
+
+### Fase 2: Implementación (2025-12-21 Madrugada)
+
+**Archivos Creados:**
+1. `setup_hardware_periferico.php` - 7 nuevas tablas de BD
+2. `admin_config_impresora.php` - Panel de impresoras (~800 líneas)
+3. `admin_config_hardware_cocina.php` - Panel de hardware (~750 líneas)
+4. `cocina_control_calidad.php` - Control de calidad (~550 líneas)
+5. `admin_updates.php` - Sistema de actualizaciones (~500 líneas)
+6. `thermal_printer.js` - Librería de impresoras
+7. `kitchen_hardware.js` - Librería de hardware cocina
+8. `api/check_updates.php` - API de actualizaciones
+9. `api/imprimir_factura.php` - API de impresión
+
+**Total:** ~4,200 líneas de código
+
+### Fase 3: Integración (2025-12-21 Mañana)
+
+- ✅ Banner de "Hardware Periférico" agregado a `admin.php`
+- ✅ Botones de acceso rápido implementados
+- ✅ Visibilidad condicional según rol de usuario
+- ✅ Integración completada exitosamente
+
+### Fase 4: Depuración (2025-12-21 Mañana)
+
+Esta fue la fase más crítica, donde se encontraron y resolvieron 5 errores importantes.
+
+---
+
+## 🐛 Errores y Soluciones Documentados
+
+### Error #1: Unknown column 'fecha_creacion'
+
+**Síntoma:**
+```
+Unknown column 'fecha_creacion' in 'order clause'
+```
+
+**Ubicación:** `admin_updates.php` línea 109
+
+**Causa:** Nombre de columna incorrecto en la consulta SQL. La tabla `system_updates` usa `created_at`, no `fecha_creacion`.
+
+**Solución:**
+```php
+// ❌ Antes
+$updates = $conn->query("SELECT * FROM system_updates ORDER BY fecha_creacion DESC");
+
+// ✅ Después
+$updates = $conn->query("SELECT * FROM system_updates ORDER BY created_at DESC");
+```
+
+---
+
+### Error #2: Unknown column 't.nombre'
+
+**Síntoma:**
+```
+Unknown column 't.nombre' in 'field list'
+```
+
+**Ubicación:** `admin_updates.php` líneas 111-115
+
+**Causa:** Nombre de columna incorrecto en la tabla `saas_tenants`. La columna correcta es `restaurant_name`, no `nombre`.
+
+**Solución:**
+```php
+// ❌ Antes
+SELECT t.id, t.nombre, tv.version_actual...
+FROM saas_tenants t
+
+// ✅ Después
+SELECT t.id, t.restaurant_name as nombre, tv.version_actual...
+FROM saas_tenants t
+```
+
+---
+
+### Error #3: Warning - navbar_admin.php
+
+**Síntoma:**
+```
+Warning: include(includes/navbar_admin.php): Failed to open stream
+```
+
+**Ubicación:** 4 archivos (admin_updates.php, admin_config_impresora.php, etc.)
+
+**Causa:** Los nuevos paneles intentaban incluir un navbar que no existe.
+
+**Solución:**
+```php
+// ❌ Antes
+<?php include 'includes/navbar_admin.php'; ?>
+
+// ✅ Después
+<?php // include 'includes/navbar_admin.php'; ?>
+```
+
+---
+
+### Error #4: Unknown column 'nombre' (Crítico)
+
+**Síntoma:**
+```
+Unknown column 'nombre' in 'field list'
+```
+
+**Ubicación:** `admin_updates.php` línea 51 (INSERT statement)
+
+**Causa:** La tabla `system_updates` no tenía la columna `nombre`.
+
+**Investigación:**
+1. ✅ Verificado que el INSERT requiere columna `nombre`
+2. ✅ Inspeccionado `setup_hardware_periferico.php`
+3. ✅ Confirmado que faltaba la columna en CREATE TABLE
+
+**Solución:**
+
+Paso 1 - Actualizar `setup_hardware_periferico.php`:
+```sql
+CREATE TABLE IF NOT EXISTS system_updates (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    version VARCHAR(20) NOT NULL,
+    nombre VARCHAR(100) NOT NULL,  -- ✅ AGREGADO
+    descripcion TEXT NOT NULL,
+    changelog TEXT NULL,
+    es_critico TINYINT(1) DEFAULT 0,
+    requiere_reinicio TINYINT(1) DEFAULT 0,
+    ...
+);
+```
+
+Paso 2 - Ejecutar ALTER TABLE en phpMyAdmin:
+```sql
+ALTER TABLE system_updates 
+ADD COLUMN IF NOT EXISTS nombre VARCHAR(100) NOT NULL AFTER version,
+ADD COLUMN IF NOT EXISTS changelog TEXT AFTER descripcion,
+ADD COLUMN IF NOT EXISTS es_critico TINYINT(1) DEFAULT 0 AFTER changelog,
+ADD COLUMN IF NOT EXISTS requiere_reinicio TINYINT(1) DEFAULT 0 AFTER es_critico;
+```
+
+---
+
+### Error #5: ArgumentCountError - bind_param
+
+**Síntoma:**
+```
+Fatal error: ArgumentCountError: The number of elements in the type definition 
+string must match the number of bind variables
+```
+
+**Ubicación:** `admin_updates.php` línea 55
+
+**Causa:** `bind_param` tenía 8 tipos (`"ssssiiii"`) pero solo 7 variables.
+
+**Análisis:**
+```
+Parámetros a insertar:
+1. version          (string)
+2. nombre           (string)
+3. descripcion      (string)
+4. changelog        (string)
+5. es_critico       (integer)
+6. requiere_reinicio (integer)
+7. usuario_id       (integer)
+Total: 7 parámetros
+```
+
+**Solución:**
+```php
+// ❌ Antes (8 tipos, 7 variables)
+$stmt->bind_param("ssssiiii", $version, $nombre, $descripcion, $changelog, 
+                  $es_critico, $requiere_reinicio, $usuario_id);
+
+// ✅ Después (7 tipos, 7 variables)
+$stmt->bind_param("ssssiis", $version, $nombre, $descripcion, $changelog, 
+                  $es_critico, $requiere_reinicio, $usuario_id);
+```
+
+---
+
+### ✅ Prueba Final Exitosa
+
+**Acción:** Crear actualización v3.1.0
+
+**Datos de prueba:**
+- Versión: `3.1.0`
+- Nombre: `Sistema de Hardware Periférico`
+- Descripción: `Integración completa de impresoras térmicas, balanzas digitales y control de temperatura`
+- Requiere reinicio: ✅
+
+**Resultado:**
+```
+✅ Actualización v3.1.0 creada exitosamente
+```
+
+---
+
+## 📸 Capturas de Pantalla
+
+### Panel de Actualizaciones - Actualización Creada
+
+![Lista de Actualizaciones](https://raw.githubusercontent.com/globaltekhnologii/restaurante-vps/main/.github/screenshots/updates_list_v310.png)
+
+**Detalles visibles:**
+- ✅ Versión v3.1.0 con badge azul
+- ✅ Nombre "Sistema de Hardware Periférico"
+- ✅ Descripción completa
+- ✅ Indicador "⚠️ Requiere reinicio"
+- ✅ Fecha de creación
+- ✅ Botón "Distribuir" funcional
+
+### Estado de Tenants
+
+![Tabla de Tenants](https://raw.githubusercontent.com/globaltekhnologii/restaurante-vps/main/.github/screenshots/tenant_status_table.png)
+
+**Tenants registrados:**
+- La casona - v3.0.0
+- Mi Restaurante - v3.0.0
+- Restaurante Demo - v3.0.0
+
+Todos listos para recibir la actualización v3.1.0
+
+---
+
+
 
 ## ✨ Características Principales
 
@@ -523,54 +787,12 @@ Este software es propietario y confidencial. No está permitida su distribución
 
 ---
 
-## 📞 Contacto y Soporte
+## 📞 Soporte
 
-### Soporte Técnico
 - **Email**: soporte@globaltekhnologii.com
+- **Teléfono**: +1 (XXX) XXX-XXXX
 - **Documentación**: [docs.globaltekhnologii.com](https://docs.globaltekhnologii.com)
 - **Issues**: Reportar en el sistema interno de tickets
-
-### Contrataciones y Servicios
-- **Email**: contrataciones@globaltekhnologii.com
-- **Consultas Comerciales**: Disponibles para proyectos personalizados
-- **Desarrollo a Medida**: Soluciones adaptadas a tus necesidades
-
----
-
-## 🤖 Desarrollo Asistido por IA
-
-> **AVISO IMPORTANTE**: Este proyecto ha sido desarrollado con la asistencia de **Inteligencia Artificial** utilizando **Antigravity**, la plataforma de desarrollo agentico de **Google DeepMind**.
-> 
-> Antigravity ha permitido:
-> - ✨ Desarrollo acelerado de funcionalidades complejas
-> - 🔍 Análisis profundo de código y arquitectura
-> - 🐛 Depuración asistida y resolución de problemas
-> - 📚 Generación automática de documentación
-> - 🎯 Optimización de rendimiento y seguridad
->
-> **Global Tekhnologii** combina la potencia de la IA con la experiencia humana para crear soluciones de software de alta calidad, eficientes y escalables.
-
----
-
-## 🏢 Sobre Global Tekhnologii
-
-**Global Tekhnologii** es una empresa dedicada al desarrollo de soluciones tecnológicas innovadoras para la industria de restaurantes y servicios.
-
-### Nuestra Misión
-Transformar la gestión de restaurantes mediante tecnología de vanguardia, combinando desarrollo tradicional con las últimas innovaciones en Inteligencia Artificial.
-
-### Nuestros Valores
-- 🚀 **Innovación**: Uso de tecnologías emergentes como IA para acelerar el desarrollo
-- 🔐 **Seguridad**: Implementación de las mejores prácticas de seguridad
-- 🎯 **Calidad**: Código limpio, bien documentado y mantenible
-- 🤝 **Transparencia**: Comunicación clara sobre nuestros métodos y herramientas
-
-### Servicios
-- Desarrollo de software a medida
-- Integración de sistemas
-- Consultoría tecnológica
-- Soporte y mantenimiento
-- Desarrollo asistido por IA
 
 ---
 
@@ -578,43 +800,11 @@ Transformar la gestión de restaurantes mediante tecnología de vanguardia, comb
 
 Desarrollado con ❤️ por el equipo de **Global Tekhnologii**
 
-### Equipo de Desarrollo
 - **Arquitectura**: Sistema multi-tenant robusto y escalable
 - **Seguridad**: Implementación de mejores prácticas
 - **UX/UI**: Diseño moderno y responsive
 - **Hardware**: Integración con dispositivos periféricos
 
-### Tecnologías y Herramientas
-- **Antigravity** (Google DeepMind): Asistente de desarrollo agentico con IA
-- **PHP & MySQL**: Stack principal del backend
-- **JavaScript**: Librerías de hardware periférico
-- **Git**: Control de versiones
-
----
-
-## 📜 Firma Digital
-
-```
-╔══════════════════════════════════════════════════════════════╗
-║                                                              ║
-║              🌐 GLOBAL TEKHNOLOGII                          ║
-║                                                              ║
-║  Sistema de Gestión de Restaurante v3.1.0                   ║
-║  Desarrollado con asistencia de IA (Antigravity)            ║
-║                                                              ║
-║  Copyright © 2025 Global Tekhnologii                        ║
-║  Todos los derechos reservados                              ║
-║                                                              ║
-║  📧 Contrataciones: contrataciones@globaltekhnologii.com    ║
-║  🛠️ Soporte: soporte@globaltekhnologii.com                  ║
-║                                                              ║
-║  Powered by Antigravity - Google DeepMind                   ║
-║                                                              ║
-╚══════════════════════════════════════════════════════════════╝
-```
-
 ---
 
 **¡Gracias por usar nuestro sistema de gestión de restaurantes!** 🍽️
-
-*Desarrollado con la potencia de la Inteligencia Artificial y la experiencia humana.*
