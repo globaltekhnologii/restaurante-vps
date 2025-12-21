@@ -1,0 +1,85 @@
+# Archivos de configuración sensibles
+Restaurante/config.php
+*.env
+.env.local
+
+# Archivos de base de datos
+*.sql
+*.sqlite
+*.db
+
+# Archivos de sesión y caché
+Restaurante/sessions/
+Restaurante/cache/
+*.log
+
+# Archivos subidos por usuarios
+Restaurante/uploads/*
+!Restaurante/uploads/.gitkeep
+
+# Archivos del sistema operativo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDEs y editores
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+*~
+
+# Dependencias de Node.js (si se usan en el futuro)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Archivos temporales de PHP
+*.tmp
+*.temp
+*.cache
+
+# Backups
+*.bak
+*.backup
+*~
+
+# Archivos de Windows
+ehthumbs.db
+Desktop.ini
+
+# Archivos de Mac
+.AppleDouble
+.LSOverride
+Icon
+._*
+
+# Archivos de Linux
+.directory
+.Trash-*
+
+# Logs
+logs/
+*.log
+error_log
+access_log
+
+# Archivos de PHPUnit
+.phpunit.result.cache
+phpunit.xml
+
+# Composer
+vendor/
+composer.lock
+
+# Archivos de certificados (no commitear en producción)
+*.pem
+*.key
+*.crt
+*.cer
+
+# Archivos de configuración local
+local_config.php
+development.php
