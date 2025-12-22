@@ -19,6 +19,7 @@ Sistema integral de gestión para restaurantes con arquitectura multi-tenant (Sa
 - [Módulos del Sistema](#-módulos-del-sistema)
 - [Requisitos del Sistema](#-requisitos-del-sistema)
 - [Instalación](#-instalación)
+- [Instalador Automático (.exe)](#-instalador-automático-exe)
 - [Configuración](#-configuración)
 - [Arquitectura Multi-Tenant](#-arquitectura-multi-tenant)
 - [Hardware Periférico](#-hardware-periférico)
@@ -27,6 +28,7 @@ Sistema integral de gestión para restaurantes con arquitectura multi-tenant (Sa
 - [API](#-api)
 - [Contribuir](#-contribuir)
 - [Licencia](#-licencia)
+
 
 ---
 
@@ -479,6 +481,157 @@ Contraseña: 123456
 ```
 
 > ⚠️ **IMPORTANTE**: Cambiar la contraseña del administrador después del primer inicio de sesión.
+
+---
+
+## 💿 Instalador Automático (.exe)
+
+### ¿Qué es el Instalador Automático?
+
+El sistema incluye un **generador de instalador .exe** que permite distribuir el sistema completo a otros PCs sin necesidad de configuración manual. El instalador:
+
+- ✅ **Detecta automáticamente la IP local** del PC
+- ✅ **Adapta las rutas de archivos** al PC receptor
+- ✅ **Configura el sistema automáticamente** (config.php, .htaccess, etc.)
+- ✅ **Importa la base de datos** sin intervención manual
+- ✅ **Crea usuario administrador** por defecto (admin/123456)
+- ✅ **Genera archivos de inicio/detención** personalizados
+
+### 📁 Ubicación
+
+Todos los archivos del instalador están en:
+
+```
+Restaurante/Instalador/
+├── setup.iss                    # Script de Inno Setup
+├── scripts/                     # Scripts de PowerShell
+│   ├── detect_ip.ps1           # Detecta IP local
+│   ├── configure.ps1           # Configura sistema
+│   └── import_db.ps1           # Importa base de datos
+├── generar_instalador.ps1      # Genera el .exe
+├── preparar_payload.ps1        # Prepara archivos
+├── probar_instalador.ps1       # Prueba el instalador
+├── LICENSE.txt                 # Licencia del software
+├── README.md                   # Guía completa
+├── README_INSTALACION.txt      # Manual para usuarios
+├── GUIA_RAPIDA.txt            # Guía rápida
+└── INICIO_RAPIDO.md           # Pasos rápidos
+```
+
+### 🚀 Generar el Instalador (3 Pasos)
+
+#### 1️⃣ Preparar Payload
+
+```powershell
+cd Restaurante\Instalador
+.\preparar_payload.ps1
+```
+
+Este script:
+- Crea estructura de carpetas
+- Copia código del sistema
+- Exporta base de datos automáticamente
+- Crea placeholders para recursos
+
+#### 2️⃣ Descargar XAMPP Portable
+
+- Descargar desde: https://www.apachefriends.org/download.html
+- Versión recomendada: XAMPP 8.x (PHP 8.x + MySQL 8.x)
+- Extraer en: `Instalador\Payload\xampp-portable\`
+
+#### 3️⃣ Generar el Instalador
+
+```powershell
+.\generar_instalador.ps1
+```
+
+El instalador se generará en: `Output\RestaurantePOS-Setup-v3.1.exe`
+
+### 📋 Requisitos para Generar
+
+- **Inno Setup 6.x**: https://jrsoftware.org/isdl.php
+- **XAMPP Portable**: ~150 MB
+- **Espacio en disco**: ~250 MB
+
+### 🎯 Características del Instalador
+
+**Durante la Instalación:**
+1. Solicita nombre del restaurante
+2. Solicita Tenant ID
+3. Solicita URL del servidor cloud (opcional)
+4. Detecta IP local automáticamente
+5. Configura `config.php` con rutas dinámicas
+6. Crea base de datos MySQL
+7. Importa estructura y datos
+8. Crea usuario admin (admin/123456)
+9. Genera archivos INICIAR.bat y DETENER.bat
+10. Crea iconos en escritorio y menú inicio
+
+**Después de la Instalación:**
+- El usuario puede iniciar el sistema con doble clic
+- Acceso desde cualquier navegador en la red local
+- Sincronización con servidor cloud (opcional)
+- Desinstalación con opción de conservar datos
+
+### 📊 Tamaño del Instalador
+
+- **Payload sin comprimir**: ~200 MB
+- **Instalador comprimido**: ~100-150 MB
+- **Instalación final**: ~200 MB
+
+### 📖 Documentación Completa
+
+Para instrucciones detalladas sobre cómo generar y usar el instalador:
+
+- **Para Desarrolladores**: `Restaurante/Instalador/README.md`
+- **Para Usuarios Finales**: `Restaurante/Instalador/README_INSTALACION.txt`
+- **Guía Rápida**: `Restaurante/Instalador/INICIO_RAPIDO.md`
+
+### 🔧 Scripts de PowerShell Incluidos
+
+#### `detect_ip.ps1`
+Detecta automáticamente la IP local del PC usando 3 métodos:
+- Adaptador de red activo
+- DNS del sistema
+- Fallback a localhost
+
+#### `configure.ps1`
+Configura automáticamente todo el sistema:
+- Genera `config.php` con IP y rutas dinámicas
+- Crea `.htaccess` con configuración Apache
+- Crea carpetas necesarias (uploads, temp, logs, backups)
+- Genera archivos INICIAR.bat y DETENER.bat personalizados
+
+#### `import_db.ps1`
+Importa automáticamente la base de datos:
+- Espera a que MySQL esté listo
+- Crea base de datos `menu_restaurante`
+- Importa estructura y datos desde SQL
+- Verifica tablas importadas
+- Crea usuario admin por defecto
+
+### 🎬 Uso del Instalador (Para Usuarios)
+
+1. **Ejecutar** `RestaurantePOS-Setup-v3.1.exe`
+2. **Seguir** los pasos del instalador
+3. **Ingresar** información del restaurante
+4. **Esperar** a que se complete la instalación
+5. **Iniciar** el sistema con doble clic en el icono
+6. **Acceder** con usuario: admin, contraseña: 123456
+
+### 🌐 Acceso desde Otros Dispositivos
+
+Para acceder desde tablets, smartphones u otros PCs en la red:
+
+1. Obtener IP local del servidor:
+   - Abrir: `C:\Program Files\RestaurantePOS\ip_config.txt`
+   - Buscar: `LocalIP=XXX.XXX.XXX.XXX`
+
+2. En el otro dispositivo:
+   - Abrir navegador
+   - URL: `http://XXX.XXX.XXX.XXX/restaurante/admin.php`
+
+Ejemplo: `http://192.168.1.100/restaurante/admin.php`
 
 ---
 
